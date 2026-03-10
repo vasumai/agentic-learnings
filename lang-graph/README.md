@@ -25,6 +25,7 @@ cp .env.example .env   # add your API keys
 | [08_parallel_execution.py](08_parallel_execution.py) | Run multiple nodes simultaneously. Static fan-out with parallel edges, and dynamic fan-out using the `Send` API to spawn N workers at runtime. |
 | [09_sqlite_persistence.py](09_sqlite_persistence.py) | Replace `MemorySaver` with `SqliteSaver` for disk-based persistence. Conversations survive app restarts and can be resumed by `thread_id`. |
 | [10_react_agent_from_scratch.py](10_react_agent_from_scratch.py) | Build the ReAct (Reason+Act) loop manually without prebuilts. See every step — reasoning, tool execution, observation — as the agent cycles until it has a final answer. |
+| [11_end_to_end_agent.py](11_end_to_end_agent.py) | Capstone: combines ReAct loop, SQLite memory, human-in-the-loop approval, streaming, and multiple tools into a production-ready interactive research assistant. |
 
 ## Resources
 
