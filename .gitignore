@@ -1,0 +1,30 @@
+# Virtual environments
+**/venv/
+**/.venv/
+**/env/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.egg-info/
+**/.eggs/
+**/dist/
+**/build/
+
+# Environment variables
+**/.env
+
+# IDE
+.vscode/
+.idea/
+**/*.DS_Store
+
+# Jupyter
+**/.ipynb_checkpoints/
+
+# Pytest
+**/.pytest_cache/
+**/htmlcov/
+**/.coverage
