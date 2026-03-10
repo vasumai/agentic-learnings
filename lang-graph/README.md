@@ -23,6 +23,7 @@ cp .env.example .env   # add your API keys
 | [06_streaming.py](06_streaming.py) | Stream graph output three ways: node-by-node updates, full state snapshots, and individual LLM tokens for a typewriter effect. |
 | [07_subgraphs.py](07_subgraphs.py) | Compose a parent graph from reusable compiled subgraphs. Each subgraph handles one stage (extract → summarize → classify) independently. |
 | [08_parallel_execution.py](08_parallel_execution.py) | Run multiple nodes simultaneously. Static fan-out with parallel edges, and dynamic fan-out using the `Send` API to spawn N workers at runtime. |
+| [09_sqlite_persistence.py](09_sqlite_persistence.py) | Replace `MemorySaver` with `SqliteSaver` for disk-based persistence. Conversations survive app restarts and can be resumed by `thread_id`. |
 
 ## Resources
 
