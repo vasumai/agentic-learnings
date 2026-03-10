@@ -27,11 +27,14 @@ cp .env.example .env
 
 ## Examples
 
-*(Files will be added here as I progress)*
-
-| File | Description |
-|------|-------------|
-| — | — |
+| File | Concept | Key APIs |
+|------|---------|----------|
+| [01_simple_graph.py](01_simple_graph.py) | StateGraph basics — nodes, edges, state | `StateGraph`, `add_edge`, `compile`, `invoke` |
+| [02_conditional_edges.py](02_conditional_edges.py) | Tool calling and conditional routing | `bind_tools`, `ToolNode`, `add_conditional_edges` |
+| [03_memory_checkpointing.py](03_memory_checkpointing.py) | Multi-turn memory with thread isolation | `MemorySaver`, `thread_id`, `get_state` |
+| [04_human_in_the_loop.py](04_human_in_the_loop.py) | Pause graph for human approval before acting | `interrupt_before`, resume with `invoke(None, config)` |
+| [05_multi_agent.py](05_multi_agent.py) | Supervisor pattern — researcher + writer agents | Multi-node routing, `completed` state tracking |
+| [06_streaming.py](06_streaming.py) | Stream output token-by-token or node-by-node | `stream`, `astream_events`, `on_chat_model_stream` |
 
 ## Resources
 
