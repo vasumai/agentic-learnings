@@ -263,8 +263,21 @@ async def serialize_example():
 # ---------------------------------------------------------------------------
 # 5. Chat History inside a Prompt Template
 # ---------------------------------------------------------------------------
-# SK lets you embed {{$chat_history}} in a prompt template.
-# This is powerful for few-shot examples or structured multi-turn prompts.
+# SK 1.x blocks passing a ChatHistory object directly as a {{$variable}} —
+# it's a security guard against prompt injection from arbitrary objects.
+#
+# The correct pattern: serialise the history to a plain string first,
+# then pass that string as the template variable.
+# The LLM sees the conversation as formatted text; the kernel stays safe.
+
+def history_to_text(history: ChatHistory) -> str:
+    """Format ChatHistory as plain text for use in a prompt template."""
+    lines = []
+    for msg in history.messages:
+        role = str(msg.role).split(".")[-1].capitalize()  # e.g. "User", "Assistant"
+        lines.append(f"{role}: {msg.content}")
+    return "\n".join(lines)
+
 
 async def history_in_template():
     print("\n--- 5. Chat History in a Prompt Template ---")
@@ -273,12 +286,11 @@ async def history_in_template():
         plugin_name="chat",
         function_name="assistant",
         prompt=(
-            "<message role='system'>You are a concise technical assistant.</message>\n"
-            "{{$chat_history}}\n"
-            "<message role='user'>{{$user_input}}</message>"
+            "You are a concise technical assistant.\n\n"
+            "Conversation so far:\n{{$chat_history_text}}\n\n"
+            "Now answer this question: {{$user_input}}"
         ),
         prompt_execution_settings=SETTINGS,
-        template_format="semantic-kernel",
     )
 
     # Build some prior context
@@ -288,11 +300,14 @@ async def history_in_template():
     history.add_user_message("Semantic Kernel.")
     history.add_assistant_message("Excellent choice for enterprise applications!")
 
+    # Serialise to string — SK templates only accept str/int/float variables
+    history_text = history_to_text(history)
+
     result = await kernel.invoke(
         plugin_name="chat",
         function_name="assistant",
         arguments=KernelArguments(
-            chat_history=history,
+            chat_history_text=history_text,
             user_input="What are the main SK concepts I should learn first?",
         ),
     )

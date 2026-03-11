@@ -19,8 +19,8 @@ cp .env.example .env   # fill in your API keys
 | 01 | [01_hello_semantic_kernel.py](01_hello_semantic_kernel.py) | Kernel, ChatHistory, invoke_prompt, multi-turn chat |
 | 02 | [02_plugins.py](02_plugins.py) | Native Plugins — @kernel_function, direct & auto invocation |
 | 03 | [03_prompt_templates.py](03_prompt_templates.py) | Prompt Templates — {{$variable}}, reuse, PromptTemplateConfig |
-| 04 | _coming soon_ | Chat History & Conversation State |
-| 05 | _coming soon_ | Semantic Memory + Embeddings |
+| 04 | [04_chat_history.py](04_chat_history.py) | Chat History — multi-turn, persona, windowing, serialise, template |
+| 05 | [05_semantic_memory.py](05_semantic_memory.py) | Semantic Memory — embeddings, save/search, collections, TextMemoryPlugin |
 | 06 | _coming soon_ | Planners (auto function selection) |
 | 07 | _coming soon_ | Filters & Middleware |
 | 08 | _coming soon_ | Agents (ChatCompletionAgent) |
