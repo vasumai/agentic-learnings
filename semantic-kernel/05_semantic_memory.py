@@ -131,6 +131,12 @@ kernel.add_service(
 )
 
 # Create the embedding service and memory store
+# NOTE: VolatileMemoryStore + SemanticTextMemory are deprecated in SK 1.40.
+# The replacement (InMemoryStore + InMemoryCollection + @vectorstoremodel) is
+# marked @release_candidate in 1.40 and has known deserialization issues.
+# We deliberately use the deprecated API here because it is stable, well-tested,
+# and far simpler to read for learning purposes. Migrate when the new API
+# reaches a stable release.
 embedder = SimpleEmbeddingService()
 memory_store = VolatileMemoryStore()       # in-process, lost on restart
 memory = SemanticTextMemory(

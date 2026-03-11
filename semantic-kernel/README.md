@@ -21,7 +21,7 @@ cp .env.example .env   # fill in your API keys
 | 03 | [03_prompt_templates.py](03_prompt_templates.py) | Prompt Templates — {{$variable}}, reuse, PromptTemplateConfig |
 | 04 | [04_chat_history.py](04_chat_history.py) | Chat History — multi-turn, persona, windowing, serialise, template |
 | 05 | [05_semantic_memory.py](05_semantic_memory.py) | Semantic Memory — embeddings, save/search, collections, TextMemoryPlugin |
-| 06 | _coming soon_ | Planners (auto function selection) |
+| 06 | [06_function_calling.py](06_function_calling.py) | Function Calling — Auto/Required/NoneInvoke, filters, loop depth |
 | 07 | _coming soon_ | Filters & Middleware |
 | 08 | _coming soon_ | Agents (ChatCompletionAgent) |
 | 09 | _coming soon_ | Multi-Agent Collaboration |
