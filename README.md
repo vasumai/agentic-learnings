@@ -7,7 +7,7 @@ A hands-on, incremental learning repository for agentic AI frameworks — built 
 | Folder | Framework | Examples | Status |
 |--------|-----------|----------|--------|
 | [lang-graph/](lang-graph/) | LangGraph | 12 examples — from basics to production agent | ✅ Complete |
-| [crew-ai/](crew-ai/) | CrewAI | Role-based multi-agent framework | 🚧 In progress |
+| [crew-ai/](crew-ai/) | CrewAI | Role-based multi-agent framework | ✅ Complete |
 
 ## What's Inside
 
