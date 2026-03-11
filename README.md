@@ -7,7 +7,7 @@ A hands-on, incremental learning repository for agentic AI frameworks — built 
 | Folder | Framework | Examples | Status |
 |--------|-----------|----------|--------|
 | [lang-graph/](lang-graph/) | LangGraph | 12 examples — from basics to production agent | ✅ Complete |
-| [crew-ai/](crew-ai/) | CrewAI | Role-based multi-agent framework | 🔜 Coming soon |
+| [crew-ai/](crew-ai/) | CrewAI | Role-based multi-agent framework | 🚧 In progress |
 
 ## What's Inside
 
@@ -51,6 +51,16 @@ python 01_simple_graph.py
 | 10 | ReAct agent from scratch — no prebuilts |
 | 11 | End-to-end production agent (capstone) |
 | 12 | Real-world APIs — live weather, crypto, Wikipedia |
+
+## Framework Comparison
+
+Not sure which framework fits your use case? See the detailed side-by-side breakdown:
+
+**[LangGraph vs CrewAI — A Practical Comparison](LANGGRAPH_VS_CREWAI.md)**
+
+Covers: core philosophy, state management, routing, memory, code examples, honest trade-offs, and a quick decision guide — built from hands-on experience with 12 examples in each framework.
+
+---
 
 ## API Keys Needed
 
