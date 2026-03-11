@@ -17,10 +17,10 @@ cp .env.example .env   # fill in your API keys
 | # | File | Concepts |
 |---|------|----------|
 | 01 | [01_hello_semantic_kernel.py](01_hello_semantic_kernel.py) | Kernel, ChatHistory, invoke_prompt, multi-turn chat |
-| 02 | _coming soon_ | Native Plugins (functions the Kernel can call) |
-| 03 | _coming soon_ | Prompt Templates with variables |
-| 04 | _coming soon_ | Semantic Memory + Embeddings |
-| 05 | _coming soon_ | Function Calling / Tool Use |
+| 02 | [02_plugins.py](02_plugins.py) | Native Plugins — @kernel_function, direct & auto invocation |
+| 03 | [03_prompt_templates.py](03_prompt_templates.py) | Prompt Templates — {{$variable}}, reuse, PromptTemplateConfig |
+| 04 | _coming soon_ | Chat History & Conversation State |
+| 05 | _coming soon_ | Semantic Memory + Embeddings |
 | 06 | _coming soon_ | Planners (auto function selection) |
 | 07 | _coming soon_ | Filters & Middleware |
 | 08 | _coming soon_ | Agents (ChatCompletionAgent) |
