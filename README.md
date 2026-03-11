@@ -35,7 +35,9 @@ cp .env.example .env    # fill in your API keys
 python 01_simple_graph.py
 ```
 
-## LangGraph — What You'll Learn
+## What You'll Learn
+
+### LangGraph — Graph-based stateful agents
 
 | # | Concept |
 |---|---------|
@@ -52,6 +54,23 @@ python 01_simple_graph.py
 | 11 | End-to-end production agent (capstone) |
 | 12 | Real-world APIs — live weather, crypto, Wikipedia |
 
+### CrewAI — Role-based multi-agent teams
+
+| # | Concept |
+|---|---------|
+| 01 | First Agent — role, goal, backstory, task, crew |
+| 02 | Agent with tools — SerperDevTool, dynamic inputs |
+| 03 | Two-agent sequential crew — automatic context handoff |
+| 04 | Task dependencies — explicit context=[] wiring |
+| 05 | Hierarchical crew — Manager agent delegates dynamically |
+| 06 | Custom tools — @tool decorator and BaseTool class |
+| 07 | Structured output — Pydantic models from tasks |
+| 08 | Memory — short-term, long-term, entity across runs |
+| 09 | Human-in-the-loop — review gates mid-pipeline |
+| 10 | Flow basics — @start, @listen, @router, FlowState |
+| 11 | Flow + Crew — Flow orchestrating multiple Crews |
+| 12 | Real-world pipeline — live APIs, Pydantic, memory, Flow (capstone) |
+
 ## Framework Comparison
 
 Not sure which framework fits your use case? See the detailed side-by-side breakdown:
@@ -66,7 +85,8 @@ Covers: core philosophy, state management, routing, memory, code examples, hones
 
 | Key | Used for |
 |-----|----------|
-| `ANTHROPIC_API_KEY` | LangGraph examples 01–11 |
-| `OPENAI_API_KEY` | LangGraph example 12 |
+| `ANTHROPIC_API_KEY` | LangGraph 01–11, CrewAI all examples |
+| `OPENAI_API_KEY` | LangGraph 12 |
+| `SERPER_API_KEY` | CrewAI 02, 12 (optional — free tier at serper.dev) |
 
-All other APIs in example 12 (Open-Meteo, Wikipedia, REST Countries, CoinGecko) are free with no key.
+Free APIs used with no key: Open-Meteo, Wikipedia, REST Countries, CoinGecko, HackerNews, GitHub Search.
