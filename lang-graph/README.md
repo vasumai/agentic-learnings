@@ -26,6 +26,16 @@ cp .env.example .env   # add your API keys
 | [09_sqlite_persistence.py](09_sqlite_persistence.py) | Replace `MemorySaver` with `SqliteSaver` for disk-based persistence. Conversations survive app restarts and can be resumed by `thread_id`. |
 | [10_react_agent_from_scratch.py](10_react_agent_from_scratch.py) | Build the ReAct (Reason+Act) loop manually without prebuilts. See every step — reasoning, tool execution, observation — as the agent cycles until it has a final answer. |
 | [11_end_to_end_agent.py](11_end_to_end_agent.py) | Capstone: combines ReAct loop, SQLite memory, human-in-the-loop approval, streaming, and multiple tools into a production-ready interactive research assistant. |
+| [12_real_world_apis.py](12_real_world_apis.py) | Live API calls with no mocks — real weather, air quality, UV index, country info, Wikipedia summaries, and crypto prices using 100% free APIs with OpenAI as the LLM. |
+
+## API Keys Required
+
+| Key | Where to get it | Used in |
+|-----|----------------|---------|
+| `OPENAI_API_KEY` | [platform.openai.com](https://platform.openai.com) | Files 12 |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) | Files 01–11 |
+
+All other APIs used in file 12 (Open-Meteo, REST Countries, Wikipedia, CoinGecko) are **completely free with no key required**.
 
 ## Resources
 
