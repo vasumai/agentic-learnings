@@ -218,20 +218,21 @@ class ContentCreationFlow(Flow[ContentPipelineState]):
         print(f"[FLOW] Quality score: {self.state.quality_score}/10 — Verdict: {self.state.quality_verdict}")
 
     # ── Step 5: @router — conditional branching ───────────────────────────────
-    # @router reads state and returns a STRING that names the next step to run.
-    # The string must match a method name in this class.
-    # This is CrewAI's equivalent of LangGraph's conditional_edges.
+    # @router reads state and returns a STRING route label.
+    # IMPORTANT: route labels must be DIFFERENT from method names —
+    # if label == method name the method re-triggers itself (infinite loop).
+    # Convention: use short descriptive labels like "approved" / "rejected".
 
     @router(quality_check)
     def route_on_quality(self):
         print(f"\n[FLOW] Routing based on quality verdict: '{self.state.quality_verdict}'")
         if self.state.quality_score >= 7 and self.state.quality_verdict == "pass":
-            return "finalize_article"
+            return "approved"       # ← label, NOT the method name
         else:
-            return "revise_draft"
+            return "needs_revision" # ← label, NOT the method name
 
     # ── Step 6a: Finalize (happy path) ───────────────────────────────────────
-    @listen("finalize_article")
+    @listen("approved")             # ← listens for the route label "approved"
     def finalize_article(self):
         print("\n[FLOW] Step 4a: Finalizing article for publication...")
         keywords_str = ", ".join(self.state.seo_keywords)
@@ -243,7 +244,7 @@ class ContentCreationFlow(Flow[ContentPipelineState]):
         print("[FLOW] Article finalized and marked publish-ready!")
 
     # ── Step 6b: Revise (revision path) ──────────────────────────────────────
-    @listen("revise_draft")
+    @listen("needs_revision")       # ← listens for the route label "needs_revision"
     def revise_draft(self):
         print("\n[FLOW] Step 4b: Draft needs revision — improving...")
 
@@ -289,8 +290,8 @@ print("  plan_content (@start)")
 print("  ├── write_draft (@listen)")
 print("  │   └── quality_check (@listen)")
 print("  │       └── route_on_quality (@router)")
-print("  │           ├── finalize_article  (score >= 7)")
-print("  │           └── revise_draft      (score < 7)")
+print("  │           ├── 'approved' → finalize_article  (score >= 7)")
+print("  │           └── 'needs_revision' → revise_draft  (score < 7)")
 print("  └── generate_seo_keywords (@listen) ← parallel")
 print()
 
