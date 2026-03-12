@@ -25,7 +25,7 @@ cp .env.example .env   # fill in your API keys
 | 07 | [07_filters.py](07_filters.py) | Filters & Middleware — FUNCTION_INVOCATION, PROMPT_RENDERING, AUTO_FUNCTION_INVOCATION |
 | 08 | [08_chat_completion_agent.py](08_chat_completion_agent.py) | ChatCompletionAgent — name/instructions, plugins, ChatHistoryAgentThread, streaming |
 | 09 | [09_multi_agent.py](09_multi_agent.py) | Multi-Agent — AgentGroupChat, SequentialSelection, KernelFunctionSelection/Termination |
-| 10 | _coming soon_ | Human-in-the-Loop |
+| 10 | [10_hitl.py](10_hitl.py) | Human-in-the-Loop — AUTO_FUNCTION_INVOCATION filter, risk tiers, audit log |
 | 11 | _coming soon_ | MCP Integration |
 | 12 | _coming soon_ | Capstone — Real-World Pipeline |
 
