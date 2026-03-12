@@ -27,7 +27,7 @@ cp .env.example .env   # fill in your API keys
 | 09 | [09_multi_agent.py](09_multi_agent.py) | Multi-Agent — AgentGroupChat, SequentialSelection, KernelFunctionSelection/Termination |
 | 10 | [10_hitl.py](10_hitl.py) | Human-in-the-Loop — AUTO_FUNCTION_INVOCATION filter, risk tiers, audit log |
 | 11 | [11_mcp.py](11_mcp.py) | MCP Integration — MCPStdioPlugin, MCPSsePlugin, resources, real-world servers |
-| 12 | _coming soon_ | Capstone — Real-World Pipeline |
+| 12 | [12_capstone.py](12_capstone.py) | Capstone — Multi-agent Research Pipeline (all concepts combined) |
 
 ## How SK Compares
 
