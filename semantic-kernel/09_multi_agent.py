@@ -1,63 +1,45 @@
 """
-Lesson 09 — Multi-Agent Collaboration (AgentGroupChat)
-========================================================
-AgentGroupChat is SK's built-in multi-agent runtime.
-Multiple ChatCompletionAgents participate in a shared conversation,
-each taking turns responding until a termination condition is met.
+Lesson 09 — Multi-Agent Collaboration
+=======================================
+NOTE ON AgentGroupChat + Anthropic:
+  SK's built-in AgentGroupChat uses a shared ChatHistoryChannel where agents
+  append their responses as "assistant" messages. Anthropic's API rejects any
+  request where the last message is an assistant message ("assistant message
+  prefill" is not supported). This makes AgentGroupChat incompatible with
+  Anthropic out of the box.
+
+  The Anthropic-compatible solution: MANUAL ORCHESTRATION.
+  Each agent turn is driven by a fresh user message that summarises the
+  conversation so far.  The conversation always ends with a user message,
+  so Anthropic is happy.  This is also more transparent and educational.
 
 Comparison to what you know:
-  LangGraph  → multiple nodes with conditional edges; you wire routing explicitly
-  CrewAI     → Crew(agents=[...], tasks=[...], process=Process.sequential/hierarchical)
-  SK 1.40    → AgentGroupChat(agents=[...], selection_strategy, termination_strategy)
-               The kernel handles turn-taking; you configure the rules.
+  LangGraph  → nodes with conditional edges; you wire routing explicitly
+  CrewAI     → Crew(agents, tasks, process=sequential/hierarchical)
+  SK+Anthropic → manual orchestration loop:
+                 build context string → call agent → collect output → repeat
 
-Key classes:
-  AgentGroupChat               — the multi-agent runtime
-  SequentialSelectionStrategy  — round-robin: each agent takes turns in order
-  KernelFunctionSelectionStrategy  — LLM prompt decides which agent speaks next
-  KernelFunctionTerminationStrategy — LLM prompt decides when to stop
-  DefaultTerminationStrategy   — stop after N iterations (simplest)
-
-Usage pattern:
-  chat = AgentGroupChat(agents=[a, b], ...)
-  await chat.add_chat_message(ChatMessageContent(role=AuthorRole.USER, content="..."))
-  async for msg in chat.invoke():
-      print(f"{msg.name}: {msg.content}")
-
-Topics covered:
-  1. Round-robin chat (SequentialSelectionStrategy + max iterations)
-  2. Writer + Critic collaboration (round-robin with termination keyword)
-  3. LLM-driven agent selection (KernelFunctionSelectionStrategy)
-  4. LLM-driven termination (KernelFunctionTerminationStrategy)
+Patterns covered:
+  1. Round-robin — fixed turn order, each agent sees all previous responses
+  2. Writer + Critic — two-agent reflection loop until Critic approves
+  3. LLM-driven routing — a selector agent decides who speaks next
 """
 
 import asyncio
-from typing import Annotated
 from dotenv import load_dotenv
 import os
 
 import semantic_kernel as sk
-from semantic_kernel.agents import AgentGroupChat, ChatCompletionAgent
-from semantic_kernel.agents.strategies import (
-    SequentialSelectionStrategy,
-    KernelFunctionSelectionStrategy,
-    KernelFunctionTerminationStrategy,
-    DefaultTerminationStrategy,
-)
+from semantic_kernel.agents import ChatCompletionAgent
 from semantic_kernel.connectors.ai.anthropic import AnthropicChatCompletion
-from semantic_kernel.connectors.ai.function_choice_behavior import FunctionChoiceBehavior
 from semantic_kernel.connectors.ai.prompt_execution_settings import PromptExecutionSettings
-from semantic_kernel.contents import ChatMessageContent
-from semantic_kernel.contents.utils.author_role import AuthorRole
-from semantic_kernel.functions import kernel_function, KernelArguments, KernelFunctionMetadata
+from semantic_kernel.functions import KernelArguments
 
 load_dotenv()
 
 print("=" * 62)
-print("Lesson 09 — Multi-Agent Collaboration (AgentGroupChat)")
+print("Lesson 09 — Multi-Agent Collaboration")
 print("=" * 62)
-
-SERVICE_ID = "anthropic_chat"
 
 
 def make_kernel() -> sk.Kernel:
@@ -65,30 +47,46 @@ def make_kernel() -> sk.Kernel:
     kernel.add_service(AnthropicChatCompletion(
         ai_model_id="claude-sonnet-4-6",
         api_key=os.environ["ANTHROPIC_API_KEY"],
-        service_id=SERVICE_ID,
+        service_id="anthropic_chat",
     ))
     return kernel
 
 
-def auto_args(max_tokens: int = 400) -> KernelArguments:
-    return KernelArguments(settings=PromptExecutionSettings(
-        max_tokens=max_tokens,
-        function_choice_behavior=FunctionChoiceBehavior.Auto(),
-    ))
+def base_args(max_tokens: int = 300) -> KernelArguments:
+    return KernelArguments(settings=PromptExecutionSettings(max_tokens=max_tokens))
 
 
 # ---------------------------------------------------------------------------
-# 1. Round-Robin Chat — SequentialSelectionStrategy
+# Core helper: call one agent with a fully-constructed user message
 # ---------------------------------------------------------------------------
-# Agents take turns in the order they were registered.
-# DefaultTerminationStrategy(maximum_iterations=N) stops after N total turns.
-# This is the simplest multi-agent pattern — no LLM needed for routing.
+# The key insight: agent.get_response(messages=<string>) creates a fresh
+# [system, user] pair — always ends with a user message → Anthropic-safe.
+# We embed the entire conversation context inside that user message.
+
+async def call_agent(
+    agent: ChatCompletionAgent,
+    user_message: str,
+    max_tokens: int = 300,
+) -> str:
+    """Call a single agent with a constructed user message and return its reply."""
+    response = await agent.get_response(
+        messages=user_message,
+        arguments=base_args(max_tokens),
+    )
+    return str(response).strip()
+
+
+# ---------------------------------------------------------------------------
+# 1. Round-Robin — fixed turn order, shared context
+# ---------------------------------------------------------------------------
+# Each agent receives: topic + all previous contributions + its turn prompt.
+# That message always ends with "Now respond as <name>." → user message → safe.
 #
 # LangGraph equivalent: cycle through nodes in a fixed order
-# CrewAI equivalent:    Process.sequential with agents taking each task in turn
+# CrewAI equivalent:    Process.sequential with each agent handling one task
 
 async def round_robin_example():
-    print("\n--- 1. Round-Robin Chat (SequentialSelectionStrategy) ---")
+    print("\n--- 1. Round-Robin (fixed turn order) ---")
 
     kernel = make_kernel()
 
@@ -96,198 +94,198 @@ async def round_robin_example():
         kernel=kernel,
         name="Optimist",
         instructions=(
-            "You are an enthusiastic optimist. In 1-2 sentences, highlight the positive "
-            "side of whatever topic is raised. Be upbeat and encouraging."
+            "You highlight the positive side of topics. "
+            "Keep responses to 2 sentences."
         ),
     )
     pessimist = ChatCompletionAgent(
         kernel=kernel,
         name="Pessimist",
         instructions=(
-            "You are a cautious realist. In 1-2 sentences, raise one potential concern "
-            "or downside of whatever has been said. Be constructive, not doom-and-gloom."
+            "You raise one constructive concern or downside. "
+            "Keep responses to 2 sentences."
         ),
     )
     moderator = ChatCompletionAgent(
         kernel=kernel,
         name="Moderator",
         instructions=(
-            "You are a balanced moderator. In 1 sentence, synthesise the last two "
-            "perspectives into a balanced summary. Then pose one follow-up question."
+            "You synthesise both sides into a balanced 1-sentence summary, "
+            "then ask one short follow-up question."
         ),
     )
 
-    chat = AgentGroupChat(
-        agents=[optimist, pessimist, moderator],
-        selection_strategy=SequentialSelectionStrategy(),
-        termination_strategy=DefaultTerminationStrategy(maximum_iterations=6),
-    )
-
+    agents = [optimist, pessimist, moderator]
     topic = "Is remote work better than office work for software engineers?"
-    await chat.add_chat_message(
-        ChatMessageContent(role=AuthorRole.USER, content=topic)
-    )
+    contributions: list[tuple[str, str]] = []   # (agent_name, message)
 
     print(f"Topic: {topic}\n")
-    async for msg in chat.invoke():
-        print(f"  [{msg.name}]: {msg.content}\n")
+
+    # Two full rounds
+    for round_num in range(2):
+        for agent in agents:
+            # Build conversation context from all previous turns
+            context = "\n".join(
+                f"[{name}]: {msg}" for name, msg in contributions
+            )
+            user_msg = f"Topic: {topic}"
+            if context:
+                user_msg += f"\n\nConversation so far:\n{context}"
+            user_msg += f"\n\nYou are {agent.name}. Respond now (round {round_num + 1})."
+
+            reply = await call_agent(agent, user_msg, max_tokens=200)
+            contributions.append((agent.name, reply))
+            print(f"  [{agent.name}]: {reply}\n")
 
 
 # ---------------------------------------------------------------------------
-# 2. Writer + Critic Collaboration
+# 2. Writer + Critic — reflection loop
 # ---------------------------------------------------------------------------
-# A Writer produces content; a Critic reviews it.
-# They alternate until the Critic is satisfied (outputs "APPROVED").
-# We use KernelFunctionTerminationStrategy with a simple approval prompt.
+# Writer produces content. Critic reviews it.
+# If the Critic approves, the loop ends. Otherwise the Writer revises.
+# This is the "reflection" pattern used in many production agentic systems.
 #
-# This is the "reflection" pattern — one agent generates, another judges.
-# CrewAI equivalent: two Agents with sequential Tasks and context passing.
+# LangGraph equivalent: generate node → evaluate node → conditional edge back
+# CrewAI equivalent:    two Tasks with context= wiring and human_input=True
 
 async def writer_critic_example():
-    print("\n--- 2. Writer + Critic (reflection pattern) ---")
+    print("\n--- 2. Writer + Critic (reflection loop) ---")
 
-    # Two separate kernels — agents can share one, but separate is also fine
     kernel = make_kernel()
 
     writer = ChatCompletionAgent(
         kernel=kernel,
         name="Writer",
         instructions=(
-            "You are a technical writer. Write a clear, concise 3-sentence description "
-            "of the concept the user asks about. If the Critic has given feedback, "
-            "incorporate it in your next version."
+            "You are a technical writer. Write a clear 3-sentence explanation "
+            "of the concept requested. If feedback is given, revise accordingly."
         ),
     )
     critic = ChatCompletionAgent(
         kernel=kernel,
         name="Critic",
         instructions=(
-            "You are a senior technical editor. Review the Writer's output. "
-            "If it is clear and accurate, respond ONLY with: APPROVED. "
-            "Otherwise give ONE specific improvement suggestion (1 sentence)."
+            "You are a technical editor. If the writing is clear and accurate, "
+            "respond ONLY with: APPROVED\n"
+            "Otherwise give ONE specific improvement (1 sentence max)."
         ),
     )
 
-    # Termination: stop when Critic's message contains "APPROVED"
-    termination_kernel = make_kernel()
-    termination_fn = termination_kernel.add_function(
-        plugin_name="termination",
-        function_name="check",
-        prompt=(
-            "Determine if the conversation should end.\n"
-            "The last message was: {{$last_message}}\n"
-            "Reply with only 'yes' if it contains 'APPROVED', otherwise 'no'."
-        ),
-        prompt_execution_settings=PromptExecutionSettings(max_tokens=5),
-    )
-
-    termination_strategy = KernelFunctionTerminationStrategy(
-        agents=[critic],          # only check termination after Critic speaks
-        function=termination_fn,
-        kernel=termination_kernel,
-        result_parser=lambda r: str(r.value[0]).strip().lower() == "yes",
-        history_variable_name="last_message",
-        maximum_iterations=8,
-    )
-
-    chat = AgentGroupChat(
-        agents=[writer, critic],
-        selection_strategy=SequentialSelectionStrategy(),
-        termination_strategy=termination_strategy,
-    )
-
-    task = "Explain what a Semantic Kernel filter is and why it's useful."
-    await chat.add_chat_message(
-        ChatMessageContent(role=AuthorRole.USER, content=task)
-    )
+    task = "Explain what a Semantic Kernel filter is and why it is useful."
+    draft = ""
+    feedback = ""
+    max_rounds = 4
 
     print(f"Task: {task}\n")
-    async for msg in chat.invoke():
-        print(f"  [{msg.name}]: {msg.content}\n")
+
+    for round_num in range(max_rounds):
+        # --- Writer's turn ---
+        writer_prompt = f"Write a 3-sentence explanation of: {task}"
+        if feedback:
+            writer_prompt += f"\n\nPrevious draft:\n{draft}\n\nCritic's feedback: {feedback}\nPlease revise."
+        draft = await call_agent(writer, writer_prompt, max_tokens=200)
+        print(f"  [Writer] (round {round_num + 1}): {draft}\n")
+
+        # --- Critic's turn ---
+        critic_prompt = (
+            f"Review this technical explanation:\n\n{draft}\n\n"
+            "If it is clear and accurate, reply ONLY with: APPROVED\n"
+            "Otherwise give ONE improvement suggestion."
+        )
+        feedback = await call_agent(critic, critic_prompt, max_tokens=100)
+        print(f"  [Critic] (round {round_num + 1}): {feedback}\n")
+
+        if "APPROVED" in feedback.upper():
+            print("  [Loop] Critic approved — stopping.\n")
+            break
+    else:
+        print("  [Loop] Max rounds reached.\n")
+
+    print(f"  Final approved draft:\n  {draft}")
 
 
 # ---------------------------------------------------------------------------
-# 3. LLM-Driven Agent Selection — KernelFunctionSelectionStrategy
+# 3. LLM-Driven Routing — selector agent picks who speaks next
 # ---------------------------------------------------------------------------
-# Instead of fixed turn order, a prompt decides which agent should speak next.
-# The prompt receives the conversation history and returns an agent name.
-#
-# This is the SK equivalent of a "manager" or "supervisor" pattern.
-# LangGraph equivalent: conditional edge with a routing function.
-# CrewAI equivalent:    Process.hierarchical with a manager_llm.
+# A lightweight "Selector" agent reads the conversation and names the
+# next participant. This is the SK-with-Anthropic equivalent of:
+#   LangGraph: conditional edge with a routing function
+#   CrewAI:    Process.hierarchical with a manager_llm
 
-async def llm_selection_example():
-    print("\n--- 3. LLM-Driven Agent Selection (KernelFunctionSelectionStrategy) ---")
+async def llm_routing_example():
+    print("\n--- 3. LLM-Driven Routing (selector picks next agent) ---")
 
     kernel = make_kernel()
 
     researcher = ChatCompletionAgent(
         kernel=kernel,
         name="Researcher",
-        instructions=(
-            "You are a researcher. When asked a factual question about AI frameworks, "
-            "provide a concise 2-sentence factual answer."
-        ),
+        instructions="Provide a concise 2-sentence factual answer about AI frameworks.",
     )
     explainer = ChatCompletionAgent(
         kernel=kernel,
         name="Explainer",
-        instructions=(
-            "You are a teacher. When the Researcher has given facts, "
-            "restate them in simple terms that a beginner would understand. "
-            "Use an analogy."
-        ),
+        instructions="Restate the Researcher's facts in plain language using a simple analogy.",
     )
     summariser = ChatCompletionAgent(
         kernel=kernel,
         name="Summariser",
+        instructions="Condense the Explainer's message into one bullet-point takeaway.",
+    )
+
+    selector = ChatCompletionAgent(
+        kernel=kernel,
+        name="Selector",
         instructions=(
-            "You are a summariser. After the Explainer has simplified the facts, "
-            "give a single bullet-point summary."
+            "You coordinate a 3-agent pipeline: Researcher → Explainer → Summariser.\n"
+            "Based on who has spoken last, name who should speak next.\n"
+            "Rules: if Researcher spoke last → Explainer; "
+            "if Explainer spoke last → Summariser; "
+            "if no one spoke → Researcher.\n"
+            "Reply with ONLY the agent name."
         ),
     )
 
-    agents = [researcher, explainer, summariser]
-    agent_names = ", ".join(a.name for a in agents)
-
-    # Selection prompt: given history, return exactly one agent name
-    selection_kernel = make_kernel()
-    selection_fn = selection_kernel.add_function(
-        plugin_name="selection",
-        function_name="pick_agent",
-        prompt=(
-            f"You are coordinating a discussion between: {agent_names}.\n"
-            "The conversation so far:\n{{$history}}\n\n"
-            "Who should speak next? Consider:\n"
-            "  - If no one has spoken yet → Researcher\n"
-            "  - If Researcher just spoke → Explainer\n"
-            "  - If Explainer just spoke → Summariser\n"
-            f"Reply with ONLY one of: {agent_names}"
-        ),
-        prompt_execution_settings=PromptExecutionSettings(max_tokens=10),
-    )
-
-    selection_strategy = KernelFunctionSelectionStrategy(
-        function=selection_fn,
-        kernel=selection_kernel,
-        result_parser=lambda r: str(r.value[0]).strip(),
-        history_variable_name="history",
-    )
-
-    chat = AgentGroupChat(
-        agents=agents,
-        selection_strategy=selection_strategy,
-        termination_strategy=DefaultTerminationStrategy(maximum_iterations=3),
-    )
+    agent_map = {
+        "Researcher": researcher,
+        "Explainer": explainer,
+        "Summariser": summariser,
+    }
 
     question = "What is the difference between SK plugins and LangChain tools?"
-    await chat.add_chat_message(
-        ChatMessageContent(role=AuthorRole.USER, content=question)
-    )
+    contributions: list[tuple[str, str]] = []
 
     print(f"Question: {question}\n")
-    async for msg in chat.invoke():
-        print(f"  [{msg.name}]: {msg.content}\n")
+
+    for step in range(3):
+        # Ask the selector who should speak next
+        context = "\n".join(f"{n}: {m}" for n, m in contributions)
+        selector_prompt = (
+            f"Conversation so far:\n{context if context else '(none yet)'}\n\n"
+            "Who should speak next? Reply with only: Researcher, Explainer, or Summariser."
+        )
+        chosen_name = await call_agent(selector, selector_prompt, max_tokens=10)
+        # Clean up — model may add punctuation
+        chosen_name = chosen_name.strip().strip(".").split()[0]
+
+        agent = agent_map.get(chosen_name)
+        if agent is None:
+            print(f"  [Selector] Unknown agent '{chosen_name}', defaulting to Researcher.")
+            agent = researcher
+            chosen_name = "Researcher"
+
+        print(f"  [Selector] → {chosen_name}")
+
+        # Call the chosen agent
+        context_str = "\n".join(f"[{n}]: {m}" for n, m in contributions)
+        agent_prompt = f"Question: {question}"
+        if context_str:
+            agent_prompt += f"\n\nContext:\n{context_str}"
+        agent_prompt += f"\n\nYou are {chosen_name}. Respond now."
+
+        reply = await call_agent(agent, agent_prompt, max_tokens=200)
+        contributions.append((chosen_name, reply))
+        print(f"  [{chosen_name}]: {reply}\n")
 
 
 # ---------------------------------------------------------------------------
@@ -296,19 +294,18 @@ async def llm_selection_example():
 async def main():
     await round_robin_example()
     await writer_critic_example()
-    await llm_selection_example()
+    await llm_routing_example()
 
     print("\n" + "=" * 62)
     print("Key Takeaways:")
-    print("  • AgentGroupChat(agents, selection_strategy, termination_strategy)")
-    print("  • SequentialSelectionStrategy  — round-robin turn order")
-    print("  • DefaultTerminationStrategy   — stop after N iterations (simplest)")
-    print("  • KernelFunctionTerminationStrategy — LLM prompt decides when to stop")
-    print("  • KernelFunctionSelectionStrategy   — LLM prompt picks next agent")
-    print("  • Add user message first: chat.add_chat_message(ChatMessageContent(...))")
-    print("  • Iterate: async for msg in chat.invoke() → each agent's response")
-    print("  • Writer+Critic = reflection pattern (generate → review → revise)")
-    print("  • LLM selection = supervisor/manager pattern (no fixed routing)")
+    print("  • AgentGroupChat + Anthropic: incompatible — Anthropic forbids")
+    print("    conversations ending with an assistant message (no prefill)")
+    print("  • Anthropic-safe pattern: inject conversation context into a")
+    print("    fresh user message for every agent turn")
+    print("  • Round-robin: fixed order, each agent sees prior contributions")
+    print("  • Writer + Critic: reflection loop — revise until approved")
+    print("  • LLM routing: a Selector agent names who speaks next")
+    print("  • All three patterns work by constructing the right user message")
     print("  • Next: Lesson 10 — Human-in-the-Loop (HITL)")
     print("=" * 62)
 
