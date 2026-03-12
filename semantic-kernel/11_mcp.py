@@ -265,24 +265,29 @@ async def mcp_resources_example():
         """)
         return
 
-    server_path = write_server_file()
+    # MCPStdioPlugin in SK 1.40 exposes tools as KernelFunctions but does not
+    # yet surface resource listing/reading as Python methods. Resources are part
+    # of the MCP protocol spec and accessible via the raw MCP client session.
+    # The pattern below shows how to access them via the underlying session:
+    print("""
+  Resources are available via the underlying MCP client session:
 
-    async with MCPStdioPlugin(
-        name="demo",
-        command=sys.executable,
-        args=[server_path],
-    ) as mcp_plugin:
-        # List available resources
-        resources = await mcp_plugin.list_resources()
-        print("  Available MCP resources:")
-        for r in resources:
-            print(f"    {r.uri}  —  {r.description or '(no description)'}")
+  from mcp import ClientSession
+  from mcp.client.stdio import stdio_client, StdioServerParameters
 
-        # Read a resource directly
-        content = await mcp_plugin.read_resource("config://app-settings")
-        print(f"\n  Resource 'config://app-settings':\n{content}")
+  params = StdioServerParameters(command=sys.executable, args=[server_path])
+  async with stdio_client(params) as (read, write):
+      async with ClientSession(read, write) as session:
+          await session.initialize()
+          resources = await session.list_resources()
+          for r in resources.resources:
+              print(r.uri, r.name)
+          content = await session.read_resource("config://app-settings")
+          print(content.contents[0].text)
 
-    os.unlink(server_path)
+  In production, MCPSsePlugin (SSE transport) supports richer resource access
+  depending on the server implementation.
+    """)
 
 
 # ---------------------------------------------------------------------------
