@@ -214,3 +214,18 @@ For full details on where to get each key, free vs paid tiers, and billing setup
 | `SERPER_API_KEY` | CrewAI 02 & 12 | 2,500 free searches |
 
 Free APIs (no key needed): Open-Meteo, Wikipedia, REST Countries, CoinGecko, HackerNews, GitHub Search.
+
+---
+
+## Community
+
+Have a question about a lesson? Stuck on an error? Want to share something you built?
+
+**[Join the Discussions](https://github.com/vasumai/agentic-learnings/discussions)**
+
+| Category | Use it for |
+|----------|-----------|
+| [Q&A](https://github.com/vasumai/agentic-learnings/discussions/categories/q-a) | Questions about lessons, errors, concepts |
+| [Show and Tell](https://github.com/vasumai/agentic-learnings/discussions/categories/show-and-tell) | Share what you built using these lessons |
+| [Ideas](https://github.com/vasumai/agentic-learnings/discussions/categories/ideas) | Suggest new lessons, frameworks, or improvements |
+| [General](https://github.com/vasumai/agentic-learnings/discussions/categories/general) | Anything else |
