@@ -26,7 +26,7 @@ cp .env.example .env   # fill in your API keys
 | 08 | [08_chat_completion_agent.py](08_chat_completion_agent.py) | ChatCompletionAgent — name/instructions, plugins, ChatHistoryAgentThread, streaming |
 | 09 | [09_multi_agent.py](09_multi_agent.py) | Multi-Agent — AgentGroupChat, SequentialSelection, KernelFunctionSelection/Termination |
 | 10 | [10_hitl.py](10_hitl.py) | Human-in-the-Loop — AUTO_FUNCTION_INVOCATION filter, risk tiers, audit log |
-| 11 | _coming soon_ | MCP Integration |
+| 11 | [11_mcp.py](11_mcp.py) | MCP Integration — MCPStdioPlugin, MCPSsePlugin, resources, real-world servers |
 | 12 | _coming soon_ | Capstone — Real-World Pipeline |
 
 ## How SK Compares
