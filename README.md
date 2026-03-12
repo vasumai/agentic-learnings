@@ -35,7 +35,7 @@ in one framework before moving to the next.
 |--------|-----------|---------|--------|
 | [lang-graph/](lang-graph/) | LangGraph + LangChain | 12 lessons — graph basics to production agent | ✅ Complete |
 | [crew-ai/](crew-ai/) | CrewAI | 12 lessons — role-based multi-agent teams | ✅ Complete |
-| [semantic-kernel/](semantic-kernel/) | Semantic Kernel (Microsoft) | 12 lessons — plugins, memory, agents, MCP | 🔄 In Progress (03/12) |
+| [semantic-kernel/](semantic-kernel/) | Semantic Kernel (Microsoft) | 12 lessons — plugins, memory, agents, MCP | ✅ Complete |
 
 ---
 
@@ -134,15 +134,15 @@ python 01_hello_semantic_kernel.py
 | 01 | Kernel, ChatHistory, invoke_prompt, multi-turn chat |
 | 02 | Native Plugins — @kernel_function, direct & auto invocation |
 | 03 | Prompt Templates — {{$variable}}, reuse, PromptTemplateConfig |
-| 04 | Chat History & Conversation State _(coming soon)_ |
-| 05 | Semantic Memory + Embeddings _(coming soon)_ |
-| 06 | Planners — auto function selection _(coming soon)_ |
-| 07 | Filters & Middleware _(coming soon)_ |
-| 08 | Agents — ChatCompletionAgent _(coming soon)_ |
-| 09 | Multi-Agent Collaboration _(coming soon)_ |
-| 10 | Human-in-the-Loop _(coming soon)_ |
-| 11 | MCP Integration _(coming soon)_ |
-| 12 | Capstone — Real-World Pipeline _(coming soon)_ |
+| 04 | Chat History — multi-turn, persona, windowing, serialise, template |
+| 05 | Semantic Memory — embeddings, save/search, collections, TextMemoryPlugin |
+| 06 | Function Calling — Auto/Required/NoneInvoke, filters, loop depth |
+| 07 | Filters & Middleware — FUNCTION_INVOCATION, PROMPT_RENDERING, AUTO_FUNCTION_INVOCATION |
+| 08 | ChatCompletionAgent — name/instructions, plugins, ChatHistoryAgentThread, streaming |
+| 09 | Multi-Agent — manual orchestration (Anthropic), AgentGroupChat (OpenAI) |
+| 10 | Human-in-the-Loop — AUTO_FUNCTION_INVOCATION filter, risk tiers, audit log |
+| 11 | MCP Integration — MCPStdioPlugin, MCPSsePlugin, resources, real-world servers |
+| 12 | Capstone — multi-agent Research & Report pipeline (all concepts combined) |
 
 ---
 
@@ -173,7 +173,7 @@ and a quick decision guide — built from hands-on experience with 12 lessons in
 | Key | Used for |
 |-----|----------|
 | `ANTHROPIC_API_KEY` | All three frameworks |
-| `OPENAI_API_KEY` | LangGraph lesson 12 only |
+| `OPENAI_API_KEY` | LangGraph lesson 12, SK lesson 09 (AgentGroupChat), SK lesson 12 (memory embeddings) |
 | `SERPER_API_KEY` | CrewAI lessons 02, 12 (optional — free tier at serper.dev) |
 
 Free APIs used with no key: Open-Meteo, Wikipedia, REST Countries, CoinGecko, HackerNews, GitHub Search.
