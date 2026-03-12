@@ -42,7 +42,7 @@ Architecture:
 
 import asyncio
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, Callable, Awaitable
 
 from dotenv import load_dotenv
@@ -159,7 +159,7 @@ class PublishPlugin:
             "id":        f"RPT-{len(PUBLISH_LOG) + 1:04d}",
             "title":     title,
             "content":   content,
-            "published": datetime.now(datetime.UTC).isoformat(),
+            "published": datetime.now(timezone.utc).isoformat(),
         }
         PUBLISH_LOG.append(entry)
         return f"[publish_report] Report '{title}' published as {entry['id']}."
@@ -237,7 +237,7 @@ def make_pipeline_filter() -> Callable:
 
         # Audit entry for every call
         AUDIT_LOG.append({
-            "ts":       datetime.now(datetime.UTC).isoformat(),
+            "ts":       datetime.now(timezone.utc).isoformat(),
             "function": f"{context.function.plugin_name}.{fn_name}",
             "args":     {k: str(v)[:60] for k, v in args.items()},
             "decision": decision,
@@ -429,7 +429,7 @@ async def stage_publish(kernel: sk.Kernel, service: AnthropicChatCompletion, top
         ),
     )
 
-    title  = f"Research Report: {topic} ({datetime.now(datetime.UTC).strftime('%Y-%m-%d')})"
+    title  = f"Research Report: {topic} ({datetime.now(timezone.utc).strftime('%Y-%m-%d')})"
     prompt = (
         f"Please save a draft and then publish this report.\n\n"
         f"Title: {title}\n\n"
@@ -468,7 +468,7 @@ async def stage_memory(kernel: sk.Kernel, service: AnthropicChatCompletion, topi
         await memory.save_information(
             collection="reports",
             text=summary,
-            id=f"report_{datetime.now(datetime.UTC).strftime('%Y%m%d_%H%M%S')}",
+            id=f"report_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             description=f"Research report on: {topic}",
         )
         print(f"  [Memory] Report summary stored for topic: '{topic}'")
