@@ -20,9 +20,10 @@ Comparison to what you know:
                  build context string → call agent → collect output → repeat
 
 Patterns covered:
-  1. Round-robin — fixed turn order, each agent sees all previous responses
-  2. Writer + Critic — two-agent reflection loop until Critic approves
-  3. LLM-driven routing — a selector agent decides who speaks next
+  1. Round-robin — fixed turn order, each agent sees all previous responses (Anthropic)
+  2. Writer + Critic — two-agent reflection loop until Critic approves (Anthropic)
+  3. LLM-driven routing — a selector agent decides who speaks next (Anthropic)
+  4. Native AgentGroupChat — works as designed with OpenAI (reference / contrast)
 """
 
 import asyncio
@@ -30,9 +31,16 @@ from dotenv import load_dotenv
 import os
 
 import semantic_kernel as sk
-from semantic_kernel.agents import ChatCompletionAgent
+from semantic_kernel.agents import AgentGroupChat, ChatCompletionAgent
+from semantic_kernel.agents.strategies import (
+    SequentialSelectionStrategy,
+    DefaultTerminationStrategy,
+)
 from semantic_kernel.connectors.ai.anthropic import AnthropicChatCompletion
+from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion
 from semantic_kernel.connectors.ai.prompt_execution_settings import PromptExecutionSettings
+from semantic_kernel.contents import ChatMessageContent
+from semantic_kernel.contents.utils.author_role import AuthorRole
 from semantic_kernel.functions import KernelArguments
 
 load_dotenv()
@@ -43,11 +51,23 @@ print("=" * 62)
 
 
 def make_kernel() -> sk.Kernel:
+    """Anthropic kernel — used for sections 1-3."""
     kernel = sk.Kernel()
     kernel.add_service(AnthropicChatCompletion(
         ai_model_id="claude-sonnet-4-6",
         api_key=os.environ["ANTHROPIC_API_KEY"],
         service_id="anthropic_chat",
+    ))
+    return kernel
+
+
+def make_openai_kernel() -> sk.Kernel:
+    """OpenAI kernel — used for section 4 (AgentGroupChat)."""
+    kernel = sk.Kernel()
+    kernel.add_service(OpenAIChatCompletion(
+        ai_model_id="gpt-4o-mini",
+        api_key=os.environ["OPENAI_API_KEY"],
+        service_id="openai_chat",
     ))
     return kernel
 
@@ -289,12 +309,78 @@ async def llm_routing_example():
 
 
 # ---------------------------------------------------------------------------
+# 4. Native AgentGroupChat with OpenAI  (reference / contrast)
+# ---------------------------------------------------------------------------
+# OpenAI allows conversations ending with an assistant message (prefill),
+# so SK's AgentGroupChat works exactly as designed — no workarounds needed.
+#
+# The ONLY difference from an Anthropic setup:
+#   make_openai_kernel() instead of make_kernel()
+#   No manual context-string injection needed — SK handles turn-taking.
+#
+# Requires OPENAI_API_KEY in your .env file.
+
+async def openai_agent_group_chat_example():
+    print("\n--- 4. Native AgentGroupChat (OpenAI) ---")
+
+    # Each agent gets its OWN kernel — necessary because AgentGroupChat
+    # routes messages internally and agents must be independently configured.
+    kernel_o = make_openai_kernel()
+    kernel_p = make_openai_kernel()
+    kernel_m = make_openai_kernel()
+
+    optimist = ChatCompletionAgent(
+        kernel=kernel_o,
+        name="Optimist",
+        instructions=(
+            "You highlight the positive side of topics. "
+            "Keep responses to 2 sentences."
+        ),
+    )
+    pessimist = ChatCompletionAgent(
+        kernel=kernel_p,
+        name="Pessimist",
+        instructions=(
+            "You raise one constructive concern or downside. "
+            "Keep responses to 2 sentences."
+        ),
+    )
+    moderator = ChatCompletionAgent(
+        kernel=kernel_m,
+        name="Moderator",
+        instructions=(
+            "You synthesise both sides into one balanced sentence, "
+            "then ask a short follow-up question."
+        ),
+    )
+
+    # AgentGroupChat: SK handles turn-taking and shared history internally.
+    # SequentialSelectionStrategy = round-robin in registration order.
+    # DefaultTerminationStrategy(maximum_iterations=6) = 2 full rounds.
+    chat = AgentGroupChat(
+        agents=[optimist, pessimist, moderator],
+        selection_strategy=SequentialSelectionStrategy(),
+        termination_strategy=DefaultTerminationStrategy(maximum_iterations=6),
+    )
+
+    topic = "Is remote work better than office work for software engineers?"
+    await chat.add_chat_message(
+        ChatMessageContent(role=AuthorRole.USER, content=topic)
+    )
+
+    print(f"Topic: {topic}\n")
+    async for msg in chat.invoke():
+        print(f"  [{msg.name}]: {msg.content}\n")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 async def main():
     await round_robin_example()
     await writer_critic_example()
     await llm_routing_example()
+    await openai_agent_group_chat_example()
 
     print("\n" + "=" * 62)
     print("Key Takeaways:")
@@ -305,7 +391,7 @@ async def main():
     print("  • Round-robin: fixed order, each agent sees prior contributions")
     print("  • Writer + Critic: reflection loop — revise until approved")
     print("  • LLM routing: a Selector agent names who speaks next")
-    print("  • All three patterns work by constructing the right user message")
+    print("  • OpenAI: AgentGroupChat works natively — swap make_kernel() only")
     print("  • Next: Lesson 10 — Human-in-the-Loop (HITL)")
     print("=" * 62)
 
