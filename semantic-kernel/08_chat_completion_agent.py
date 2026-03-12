@@ -43,7 +43,7 @@ from semantic_kernel.agents import ChatCompletionAgent, ChatHistoryAgentThread
 from semantic_kernel.connectors.ai.anthropic import AnthropicChatCompletion
 from semantic_kernel.connectors.ai.function_choice_behavior import FunctionChoiceBehavior
 from semantic_kernel.connectors.ai.prompt_execution_settings import PromptExecutionSettings
-from semantic_kernel.functions import kernel_function
+from semantic_kernel.functions import kernel_function, KernelArguments
 
 load_dotenv()
 
@@ -103,8 +103,8 @@ def make_kernel() -> sk.Kernel:
 
 # ---------------------------------------------------------------------------
 # Default execution settings — FunctionChoiceBehavior.Auto() lets the agent
-# call its plugins autonomously.  Pass via kernel_function_selection_behavior
-# using PromptExecutionSettings stored in the agent's execution_settings.
+# call its plugins autonomously.  Pass via KernelArguments(settings=...) at
+# each get_response() / invoke() call site — NOT in the agent constructor.
 # ---------------------------------------------------------------------------
 def auto_settings(max_tokens: int = 300) -> PromptExecutionSettings:
     return PromptExecutionSettings(
@@ -127,7 +127,7 @@ async def basic_agent_example():
 
     agent = ChatCompletionAgent(
         kernel=kernel,
-        name="Haiku Bot",
+        name="Haiku_Bot",
         instructions=(
             "You are a creative assistant who always responds in haiku format "
             "(5-7-5 syllables). Nothing else — just the haiku."
@@ -163,7 +163,6 @@ async def agent_with_plugins_example():
         kernel=kernel,
         name="Assistant",
         instructions="You are a helpful assistant. Use your tools when appropriate. Be concise.",
-        execution_settings=auto_settings(max_tokens=400),
     )
 
     queries = [
@@ -172,9 +171,10 @@ async def agent_with_plugins_example():
         "What is 15 + 27, and what's the weather in London?",
     ]
 
+    args = KernelArguments(settings=auto_settings(max_tokens=400))
     for query in queries:
         print(f"\nUser: {query}")
-        response = await agent.get_response(messages=query)
+        response = await agent.get_response(messages=query, arguments=args)
         print(f"{agent.name}: {response}")
 
 
@@ -196,16 +196,16 @@ async def multi_turn_example():
 
     agent = ChatCompletionAgent(
         kernel=kernel,
-        name="Travel Advisor",
+        name="Travel_Advisor",
         instructions=(
             "You are a friendly travel advisor. Remember what the user tells you "
             "and use that context in follow-up answers. Keep responses short."
         ),
-        execution_settings=auto_settings(max_tokens=300),
     )
 
     # One thread = one conversation session
     thread = ChatHistoryAgentThread()
+    args = KernelArguments(settings=auto_settings(max_tokens=300))
 
     turns = [
         "I'm planning a trip and considering Tokyo or Sydney.",
@@ -216,12 +216,11 @@ async def multi_turn_example():
 
     for user_msg in turns:
         print(f"\nUser: {user_msg}")
-        response = await agent.get_response(messages=user_msg, thread=thread)
+        response = await agent.get_response(messages=user_msg, thread=thread, arguments=args)
         print(f"{agent.name}: {response}")
 
     # Inspect how many messages accumulated in the thread
-    history = await thread.get_history()
-    print(f"\n[Thread has {len(history)} messages in history]")
+    print(f"\n[Thread has {len(thread._chat_history)} messages in history]")
 
 
 # ---------------------------------------------------------------------------
@@ -242,16 +241,16 @@ async def streaming_example():
 
     agent = ChatCompletionAgent(
         kernel=kernel,
-        name="Streaming Demo",
+        name="Streaming_Demo",
         instructions="You are a concise assistant. Show your reasoning step by step.",
-        execution_settings=auto_settings(max_tokens=300),
     )
 
     prompt = "Calculate 123 + 456, then multiply the result by 2. Show each step."
     print(f"User: {prompt}")
     print(f"{agent.name}: ", end="", flush=True)
 
-    async for chunk in agent.invoke(messages=prompt):
+    args = KernelArguments(settings=auto_settings(max_tokens=300))
+    async for chunk in agent.invoke(messages=prompt, arguments=args):
         # Each chunk is a ChatMessageContent — print content without newline
         print(chunk.content, end="", flush=True)
 
@@ -275,26 +274,26 @@ async def specialist_agents_example():
     kernel.add_plugin(MathPlugin(), plugin_name="math")
     kernel.add_plugin(WeatherPlugin(), plugin_name="weather")
 
+    args = KernelArguments(settings=auto_settings(max_tokens=200))
+
     # Agent 1: Math specialist — only cares about numbers
     math_agent = ChatCompletionAgent(
         kernel=kernel,
-        name="Math Expert",
+        name="Math_Expert",
         instructions=(
             "You are a math specialist. Only answer math questions using your tools. "
             "For non-math questions, say 'That's outside my expertise.'"
         ),
-        execution_settings=auto_settings(max_tokens=200),
     )
 
     # Agent 2: Travel concierge — focuses on weather and travel advice
     travel_agent = ChatCompletionAgent(
         kernel=kernel,
-        name="Travel Concierge",
+        name="Travel_Concierge",
         instructions=(
             "You are an enthusiastic travel concierge. Use the weather tool to give "
             "personalized travel tips. Always end with a travel emoji."
         ),
-        execution_settings=auto_settings(max_tokens=200),
     )
 
     # Same question, different agents — same kernel, completely different behaviour
@@ -302,15 +301,15 @@ async def specialist_agents_example():
     query_travel = "Should I visit New York or London this week?"
 
     print(f"Sending '{query_math}' to both agents:\n")
-    r1 = await math_agent.get_response(messages=query_math)
+    r1 = await math_agent.get_response(messages=query_math, arguments=args)
     print(f"  {math_agent.name}: {r1}")
-    r2 = await travel_agent.get_response(messages=query_math)
+    r2 = await travel_agent.get_response(messages=query_math, arguments=args)
     print(f"  {travel_agent.name}: {r2}")
 
     print(f"\nSending '{query_travel}' to both agents:\n")
-    r3 = await math_agent.get_response(messages=query_travel)
+    r3 = await math_agent.get_response(messages=query_travel, arguments=args)
     print(f"  {math_agent.name}: {r3}")
-    r4 = await travel_agent.get_response(messages=query_travel)
+    r4 = await travel_agent.get_response(messages=query_travel, arguments=args)
     print(f"  {travel_agent.name}: {r4}")
 
 
@@ -332,7 +331,7 @@ async def main():
     print("  • ChatHistoryAgentThread tracks multi-turn context automatically")
     print("  • Plugins added to the kernel are available to all agents on it")
     print("  • Multiple agents can share one kernel — different personas, same tools")
-    print("  • execution_settings=PromptExecutionSettings(...) controls tool use")
+    print("  • Pass KernelArguments(settings=PromptExecutionSettings(...)) at call sites")
     print("  • Next: Lesson 09 — Multi-Agent Collaboration (AgentGroupChat)")
     print("=" * 62)
 
