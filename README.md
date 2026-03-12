@@ -1,6 +1,6 @@
 # Agentic AI Learning Journey
 
-A hands-on, incremental learning repository for three major agentic AI frameworks —
+A hands-on, incremental learning repository for four major agentic AI frameworks —
 built example by example, concept by concept, in a deliberate learning sequence.
 
 ---
@@ -9,20 +9,20 @@ built example by example, concept by concept, in a deliberate learning sequence.
 
 > **Start here if you are new to agentic AI frameworks.**
 
-The three frameworks are ordered intentionally. Each one builds on mental models
-you develop in the previous one. Jumping straight to Semantic Kernel without
-LangGraph context, for example, makes the orchestration patterns much harder to internalize.
+The frameworks are ordered intentionally. Each one builds on mental models
+you develop in the previous one.
 
 ```
-LangGraph  →  CrewAI  →  Semantic Kernel
-  (how)        (who)         (what + enterprise)
+LangGraph  →  CrewAI  →  Semantic Kernel  →  Google ADK
+  (how)        (who)      (what + enterprise)   (Gemini-native)
 ```
 
 | Step | Framework | Why this order |
 |------|-----------|----------------|
 | **1. LangGraph** | Graph-based stateful agents | Teaches the *mechanics* — state, edges, routing, checkpointing. You build agents from first principles. No magic. |
 | **2. CrewAI** | Role-based multi-agent teams | Teaches the *team metaphor* — agents with roles, goals, and delegated tasks. Higher abstraction than LangGraph. |
-| **3. Semantic Kernel** | Microsoft's enterprise AI SDK | Teaches the *plugin/kernel model* — the most structured, enterprise-ready approach. References to LangGraph and CrewAI patterns appear throughout the code comments. |
+| **3. Semantic Kernel** | Microsoft's enterprise AI SDK | Teaches the *plugin/kernel model* — the most structured, enterprise-ready approach. |
+| **4. Google ADK** | Google's open-source agent framework | Teaches *Gemini-native multi-agent orchestration* — SequentialAgent, ParallelAgent, LoopAgent, MCP, and HITL callbacks. |
 
 Each framework has 12 lessons (simple → advanced → capstone). Complete all 12
 in one framework before moving to the next.
@@ -36,6 +36,7 @@ in one framework before moving to the next.
 | [lang-graph/](lang-graph/) | LangGraph + LangChain | 12 lessons — graph basics to production agent | ✅ Complete |
 | [crew-ai/](crew-ai/) | CrewAI | 12 lessons — role-based multi-agent teams | ✅ Complete |
 | [semantic-kernel/](semantic-kernel/) | Semantic Kernel (Microsoft) | 12 lessons — plugins, memory, agents, MCP | ✅ Complete |
+| [google-adk/](google-adk/) | Google ADK | 12 lessons — Gemini-native multi-agent pipelines | ✅ Complete |
 
 ---
 
@@ -82,6 +83,21 @@ pip install -r requirements.txt
 cp .env.example .env    # add ANTHROPIC_API_KEY
 python 01_hello_semantic_kernel.py
 ```
+
+### Step 4 — Google ADK
+
+```bash
+cd google-adk
+python3.12 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env    # add GOOGLE_API_KEY (enable billing — see API-KEYS.md)
+python 01_hello_adk.py
+```
+
+> **Google ADK note:** The free tier has a 20 requests/day hard cap — you will hit
+> it mid-lesson. Enable billing on your Google Cloud project first (2 minutes,
+> costs pennies). See [API-KEYS.md](API-KEYS.md) for step-by-step instructions.
 
 ---
 
@@ -144,6 +160,25 @@ python 01_hello_semantic_kernel.py
 | 11 | MCP Integration — MCPStdioPlugin, MCPSsePlugin, resources, real-world servers |
 | 12 | Capstone — multi-agent Research & Report pipeline (all concepts combined) |
 
+### Google ADK — Gemini-native multi-agent framework
+
+> Google's open-source Python SDK for building multi-agent systems with Gemini. Best for Gemini-native pipelines with structured orchestration primitives.
+
+| # | Concept |
+|---|---------|
+| 01 | Agent + Runner + InMemorySessionService — the three core ADK objects |
+| 02 | Plain Python functions as tools — docstring = description, type hints = schema |
+| 03 | FunctionTool, LongRunningFunctionTool, google_search; built-in tool mixing restriction |
+| 04 | Multi-turn conversation, isolated sessions, session history inspection |
+| 05 | output_schema (Pydantic structured output), output_key (saves to session state) |
+| 06 | Callbacks — before/after agent, model, and tool hooks (ADK's middleware layer) |
+| 07 | SequentialAgent — pipeline: ResearchAgent → AnalysisAgent → SummaryAgent |
+| 08 | ParallelAgent — concurrent fan-out + merger agent pattern |
+| 09 | LoopAgent — exit_loop tool, max_iterations safety net, writer/checker pattern |
+| 10 | Human-in-the-Loop — before_tool_callback approval gate, risk-based routing |
+| 11 | MCP Integration — McpToolset, StdioConnectionParams, tool_filter |
+| 12 | Capstone — editorial pipeline: MCP + parallel analysis + structured output + HITL |
+
 ---
 
 ## Framework Comparison
@@ -152,28 +187,30 @@ Not sure which framework fits your use case? See the detailed side-by-side break
 
 **[LangGraph vs CrewAI — A Practical Comparison](LANGGRAPH_VS_CREWAI.md)**
 
-Covers: core philosophy, state management, routing, memory, code examples, honest trade-offs,
-and a quick decision guide — built from hands-on experience with 12 lessons in each framework.
-
-| Concept | LangGraph | CrewAI | Semantic Kernel |
-|---------|-----------|--------|-----------------|
-| Core unit | StateGraph | Crew | Kernel |
-| Functions / Tools | Node tool calls | @tool / BaseTool | @kernel_function Plugin |
-| Prompt definition | PromptTemplate (LangChain) | Task description string | kernel.add_function(prompt=...) |
-| Multi-agent | Supervisor node | Crew(agents) | AgentGroup |
-| Memory | MemorySaver / SQLite | memory=True | VectorStore / SK Memory |
-| Orchestration | Edge routing | Task pipeline | Planner / invoke() |
-| Human-in-loop | interrupt_before | human_input=True | Custom filter |
-| Best for | Stateful graph pipelines | Role-based agent teams | Enterprise plugin architecture |
+| Concept | LangGraph | CrewAI | Semantic Kernel | Google ADK |
+|---------|-----------|--------|-----------------|------------|
+| Core unit | StateGraph | Crew | Kernel | Agent + Runner |
+| Tools | Node tool calls | @tool / BaseTool | @kernel_function Plugin | Plain Python functions |
+| Multi-agent | Supervisor node | Task pipeline | AgentGroupChat | SequentialAgent / ParallelAgent / LoopAgent |
+| Memory | MemorySaver / SQLite | memory=True | VectorStore / SK Memory | InMemorySessionService / session.state |
+| HITL | interrupt_before | human_input=True | AUTO_FUNCTION_INVOCATION filter | before_tool_callback |
+| MCP | Custom | Custom | MCPStdioPlugin | McpToolset (native) |
+| Model | Any | Any | Any | Gemini (native) |
+| Best for | Stateful graph pipelines | Role-based agent teams | Enterprise plugin architecture | Gemini-native multi-agent pipelines |
 
 ---
 
-## API Keys Needed
+## API Keys
 
-| Key | Used for |
-|-----|----------|
-| `ANTHROPIC_API_KEY` | All three frameworks |
-| `OPENAI_API_KEY` | LangGraph lesson 12, SK lesson 09 (AgentGroupChat), SK lesson 12 (memory embeddings) |
-| `SERPER_API_KEY` | CrewAI lessons 02, 12 (optional — free tier at serper.dev) |
+For full details on where to get each key, free vs paid tiers, and billing setup:
 
-Free APIs used with no key: Open-Meteo, Wikipedia, REST Countries, CoinGecko, HackerNews, GitHub Search.
+**[API-KEYS.md](API-KEYS.md)**
+
+| Key | Used by | Free tier |
+|-----|---------|-----------|
+| `ANTHROPIC_API_KEY` | LangGraph, CrewAI, Semantic Kernel | Limited credits |
+| `GOOGLE_API_KEY` | Google ADK | 20 req/day — **enable billing** |
+| `OPENAI_API_KEY` | LangGraph 12, SK 09 & 12 | No — load $5 credits |
+| `SERPER_API_KEY` | CrewAI 02 & 12 | 2,500 free searches |
+
+Free APIs (no key needed): Open-Meteo, Wikipedia, REST Countries, CoinGecko, HackerNews, GitHub Search.
