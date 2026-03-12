@@ -16,7 +16,7 @@ Key insight:
 
 import asyncio
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timezone as tz
 from dotenv import load_dotenv
 from google.adk.agents import Agent
 from google.adk.runners import Runner
@@ -38,7 +38,7 @@ def get_current_time(timezone: str = "UTC") -> str:
     Args:
         timezone: The timezone name (e.g. 'UTC', 'US/Eastern'). Defaults to UTC.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(tz.utc)
     return f"Current time ({timezone}): {now.strftime('%Y-%m-%d %H:%M:%S')}"
 
 
@@ -131,13 +131,13 @@ async def main():
     print("=== Lesson 02 — Tools ===\n")
 
     questions = [
-        "What time is it right now?",
         "What's the weather like in Tokyo?",
         "What is 123 * 456?",
-        "What's the weather in Paris, and how does that temperature compare to 25 * 2 degrees?",
     ]
 
-    for question in questions:
+    for i, question in enumerate(questions):
+        if i > 0:
+            await asyncio.sleep(20)  # respect free-tier 5 RPM limit
         print(f"You  : {question}")
         reply = await run_turn(session_id, question)
         print(f"Agent: {reply}\n")
