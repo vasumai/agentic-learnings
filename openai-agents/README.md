@@ -29,15 +29,15 @@ OPENAI_API_KEY=sk-...
 | 01 | `01_hello_agents.py` | **Hello Agents** — `Agent`, `Runner.run()`, single-turn Q&A, multi-turn with `to_input_list()` | ✅ Done |
 | 02 | `02_function_tools.py` | **Function Tools** — `@function_tool`, type hints as schema, docstring as description, `RunContextWrapper[T]` | ✅ Done |
 | 03 | `03_handoffs.py` | **Handoffs** — agent-to-agent delegation, triage routing, `on_handoff` callback, `result.last_agent` | ✅ Done |
-| 04 | `04_context.py` | **Context** — `RunContextWrapper[T]` typed context, passing state across tools and agents in a run | 🔜 Next |
-| 05 | `05_structured_output.py` | **Structured Output** — `output_type=PydanticModel`, `result.final_output_as()`, typed agent responses | ⬜ |
-| 06 | `06_multi_agent_triage.py` | **Multi-Agent Triage** — orchestrator + multiple specialists, chained handoffs, escalation patterns | ⬜ |
-| 07 | `07_guardrails.py` | **Guardrails** — `@input_guardrail`, `@output_guardrail`, `tripwire_triggered`, `InputGuardrailTripwireTriggered` | ⬜ |
-| 08 | `08_streaming.py` | **Streaming** — `Runner.run_streamed()`, `stream_events()`, event types, cancellation | ⬜ |
-| 09 | `09_lifecycle_hooks.py` | **Lifecycle Hooks** — `RunHooks`, `AgentHooks`, `on_tool_start`, `on_tool_end`, `on_handoff`, observability | ⬜ |
-| 10 | `10_human_in_the_loop.py` | **Human-in-the-Loop** — approval gates on tools, `RunState`, pausing and resuming a run | ⬜ |
-| 11 | `11_mcp_integration.py` | **MCP Integration** — `MCPServerStdio`, `MCPServerStdioParams`, connect/cleanup lifecycle | ⬜ |
-| 12 | `12_capstone.py` | **Capstone** — all patterns combined: triage + tools + context + guardrails + streaming + HITL | ⬜ |
+| 04 | `04_context.py` | **Context** — `RunContextWrapper[T]` typed context, passing state across tools and agents in a run | ✅ Done |
+| 05 | `05_structured_output.py` | **Structured Output** — `output_type=PydanticModel`, `result.final_output_as()`, typed agent responses | ✅ Done |
+| 06 | `06_multi_agent_triage.py` | **Multi-Agent Triage** — orchestrator + multiple specialists, chained handoffs, escalation patterns | ✅ Done |
+| 07 | `07_guardrails.py` | **Guardrails** — `@input_guardrail`, `@output_guardrail`, `tripwire_triggered`, `InputGuardrailTripwireTriggered` | ✅ Done |
+| 08 | `08_streaming.py` | **Streaming** — `Runner.run_streamed()`, `stream_events()`, event types, cancellation | ✅ Done |
+| 09 | `09_lifecycle_hooks.py` | **Lifecycle Hooks** — `RunHooks`, `AgentHooks`, `on_tool_start`, `on_tool_end`, `on_handoff`, observability | ✅ Done |
+| 10 | `10_human_in_the_loop.py` | **Human-in-the-Loop** — approval gates on tools, `RunState`, pausing and resuming a run | ✅ Done |
+| 11 | `11_mcp_integration.py` | **MCP Integration** — `MCPServerStdio`, `MCPServerStdioParams`, connect/cleanup lifecycle | ✅ Done |
+| 12 | `12_capstone.py` | **Capstone** — all patterns combined: triage + tools + context + guardrails + streaming + HITL | ✅ Done |
 
 ---
 

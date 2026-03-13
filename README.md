@@ -13,8 +13,8 @@ The frameworks are ordered intentionally. Each one builds on mental models
 you develop in the previous one.
 
 ```
-LangGraph  →  CrewAI  →  Semantic Kernel  →  Google ADK
-  (how)        (who)      (what + enterprise)   (Gemini-native)
+LangGraph  →  CrewAI  →  Semantic Kernel  →  Google ADK  →  OpenAI Agents SDK
+  (how)        (who)      (what + enterprise)   (Gemini-native)   (handoff-native)
 ```
 
 | Step | Framework | Why this order |
@@ -23,6 +23,7 @@ LangGraph  →  CrewAI  →  Semantic Kernel  →  Google ADK
 | **2. CrewAI** | Role-based multi-agent teams | Teaches the *team metaphor* — agents with roles, goals, and delegated tasks. Higher abstraction than LangGraph. |
 | **3. Semantic Kernel** | Microsoft's enterprise AI SDK | Teaches the *plugin/kernel model* — the most structured, enterprise-ready approach. |
 | **4. Google ADK** | Google's open-source agent framework | Teaches *Gemini-native multi-agent orchestration* — SequentialAgent, ParallelAgent, LoopAgent, MCP, and HITL callbacks. |
+| **5. OpenAI Agents SDK** | OpenAI's lightweight agent framework | Teaches *handoff-native multi-agent patterns* — Agent, Runner, guardrails, HITL, MCP, and streaming with minimal boilerplate. |
 
 Each framework has 12 lessons (simple → advanced → capstone). Complete all 12
 in one framework before moving to the next.
@@ -37,6 +38,7 @@ in one framework before moving to the next.
 | [crew-ai/](crew-ai/) | CrewAI | 12 lessons — role-based multi-agent teams | ✅ Complete |
 | [semantic-kernel/](semantic-kernel/) | Semantic Kernel (Microsoft) | 12 lessons — plugins, memory, agents, MCP | ✅ Complete |
 | [google-adk/](google-adk/) | Google ADK | 12 lessons — Gemini-native multi-agent pipelines | ✅ Complete |
+| [openai-agents/](openai-agents/) | OpenAI Agents SDK | 12 lessons — handoff-native multi-agent patterns | ✅ Complete |
 
 ---
 
@@ -98,6 +100,17 @@ python 01_hello_adk.py
 > **Google ADK note:** The free tier has a 20 requests/day hard cap — you will hit
 > it mid-lesson. Enable billing on your Google Cloud project first (2 minutes,
 > costs pennies). See [API-KEYS.md](API-KEYS.md) for step-by-step instructions.
+
+### Step 5 — OpenAI Agents SDK
+
+```bash
+cd openai-agents
+python3.12 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env    # add OPENAI_API_KEY
+python 01_hello_agents.py
+```
 
 ---
 
@@ -179,6 +192,25 @@ python 01_hello_adk.py
 | 11 | MCP Integration — McpToolset, StdioConnectionParams, tool_filter |
 | 12 | Capstone — editorial pipeline: MCP + parallel analysis + structured output + HITL |
 
+### OpenAI Agents SDK — Handoff-native multi-agent framework
+
+> OpenAI's lightweight Python SDK for building multi-agent systems. Best for clean, minimal-boilerplate agent pipelines with first-class handoff, guardrail, and HITL support.
+
+| # | Concept |
+|---|---------|
+| 01 | Hello Agents — `Agent`, `Runner.run()`, single-turn Q&A, multi-turn with `to_input_list()` |
+| 02 | Function Tools — `@function_tool`, type hints as schema, docstring as description, `RunContextWrapper[T]` |
+| 03 | Handoffs — agent-to-agent delegation, triage routing, `on_handoff` callback, `result.last_agent` |
+| 04 | Context — `RunContextWrapper[T]` typed context, passing state across tools and agents in a run |
+| 05 | Structured Output — `output_type=PydanticModel`, `result.final_output_as()`, typed agent responses |
+| 06 | Multi-Agent Triage — orchestrator + multiple specialists, chained handoffs, escalation patterns |
+| 07 | Guardrails — `@input_guardrail`, `@output_guardrail`, `tripwire_triggered`, exceptions |
+| 08 | Streaming — `Runner.run_streamed()`, `stream_events()`, event types, cancellation |
+| 09 | Lifecycle Hooks — `RunHooks`, `AgentHooks`, `on_tool_start`, `on_handoff`, observability |
+| 10 | Human-in-the-Loop — approval gates on tools, `RunState`, pausing and resuming a run |
+| 11 | MCP Integration — `MCPServerStdio`, `MCPServerStdioParams`, connect/cleanup lifecycle |
+| 12 | Capstone — AI customer support platform: triage + HITL + guardrails + MCP + streaming |
+
 ---
 
 ## Framework Comparison
@@ -187,16 +219,17 @@ Not sure which framework fits your use case? See the detailed side-by-side break
 
 **[LangGraph vs CrewAI — A Practical Comparison](LANGGRAPH_VS_CREWAI.md)**
 
-| Concept | LangGraph | CrewAI | Semantic Kernel | Google ADK |
-|---------|-----------|--------|-----------------|------------|
-| Core unit | StateGraph | Crew | Kernel | Agent + Runner |
-| Tools | Node tool calls | @tool / BaseTool | @kernel_function Plugin | Plain Python functions |
-| Multi-agent | Supervisor node | Task pipeline | AgentGroupChat | SequentialAgent / ParallelAgent / LoopAgent |
-| Memory | MemorySaver / SQLite | memory=True | VectorStore / SK Memory | InMemorySessionService / session.state |
-| HITL | interrupt_before | human_input=True | AUTO_FUNCTION_INVOCATION filter | before_tool_callback |
-| MCP | Custom | Custom | MCPStdioPlugin | McpToolset (native) |
-| Model | Any | Any | Any | Gemini (native) |
-| Best for | Stateful graph pipelines | Role-based agent teams | Enterprise plugin architecture | Gemini-native multi-agent pipelines |
+| Concept | LangGraph | CrewAI | Semantic Kernel | Google ADK | OpenAI Agents SDK |
+|---------|-----------|--------|-----------------|------------|-------------------|
+| Core unit | StateGraph | Crew | Kernel | Agent + Runner | Agent + Runner |
+| Tools | Node tool calls | @tool / BaseTool | @kernel_function Plugin | Plain Python functions | @function_tool |
+| Multi-agent | Supervisor node | Task pipeline | AgentGroupChat | SequentialAgent / ParallelAgent / LoopAgent | handoff() |
+| Memory | MemorySaver / SQLite | memory=True | VectorStore / SK Memory | InMemorySessionService / session.state | RunContextWrapper[T] |
+| HITL | interrupt_before | human_input=True | AUTO_FUNCTION_INVOCATION filter | before_tool_callback | needs_approval + RunState |
+| Guardrails | Custom | Custom | Filters | Callbacks | @input/output_guardrail (built-in) |
+| MCP | Custom | Custom | MCPStdioPlugin | McpToolset (native) | MCPServerStdio (native) |
+| Model | Any | Any | Any | Gemini (native) | Any (OpenAI-optimised) |
+| Best for | Stateful graph pipelines | Role-based agent teams | Enterprise plugin architecture | Gemini-native multi-agent pipelines | Minimal-boilerplate handoff-driven agents |
 
 ---
 
@@ -210,7 +243,7 @@ For full details on where to get each key, free vs paid tiers, and billing setup
 |-----|---------|-----------|
 | `ANTHROPIC_API_KEY` | LangGraph, CrewAI, Semantic Kernel | Limited credits |
 | `GOOGLE_API_KEY` | Google ADK | 20 req/day — **enable billing** |
-| `OPENAI_API_KEY` | LangGraph 12, SK 09 & 12 | No — load $5 credits |
+| `OPENAI_API_KEY` | LangGraph 12, SK 09 & 12, OpenAI Agents SDK | No — load $5 credits |
 | `SERPER_API_KEY` | CrewAI 02 & 12 | 2,500 free searches |
 
 Free APIs (no key needed): Open-Meteo, Wikipedia, REST Countries, CoinGecko, HackerNews, GitHub Search.
